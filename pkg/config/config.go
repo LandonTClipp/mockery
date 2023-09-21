@@ -65,12 +65,21 @@ type Config struct {
 	BoilerplateFile      string                 `mapstructure:"boilerplate-file"`
 	// StructName overrides the name given to the mock struct and should only be nonempty
 	// when generating for an exact match (non regex expression in -name).
-	StructName     string   `mapstructure:"structname"`
-	TestOnly       bool     `mapstructure:"testonly"`
-	UnrollVariadic bool     `mapstructure:"unroll-variadic"`
-	Version        bool     `mapstructure:"version"`
-	WithExpecter   bool     `mapstructure:"with-expecter"`
-	ReplaceType    []string `mapstructure:"replace-type"`
+	StructName     string `mapstructure:"structname"`
+	TestOnly       bool   `mapstructure:"testonly"`
+	UnrollVariadic bool   `mapstructure:"unroll-variadic"`
+	Version        bool   `mapstructure:"version"`
+	WithExpecter   bool   `mapstructure:"with-expecter"`
+
+	// Replacements deprecates replace-type. It allows you to replace import and struct names
+	// in mockery with new package paths and struct names. This is useful in the case where
+	// a package defines an alias that points to a different package location.
+	// github.com/vektra/mockery/v2:
+	//   structs:
+	//     oldName: newName
+	//   newName: github.com/vektra/mockery/v3
+	Replacements map[string]any `mapstructure:"replacements"`
+	ReplaceType  []string       `mapstructure:"replace-type"`
 
 	// Viper throws away case-sensitivity when it marshals into this struct. This
 	// destroys necessary information we need, specifically around interface names.
@@ -757,5 +766,16 @@ func (c *Config) LogUnsupportedPackagesConfig(ctx context.Context) {
 		Str("url", logging.DocsURL("/configuration/#parameter-descriptions")).
 		Logger()
 	l.Error().Msg("use of unsupported options detected. mockery behavior is undefined.")
+
+}
+
+func (c *Config) GetReplacement(ctx context.Context, packagePath string, structName string) (string, string, erorr) {
+	log := zerolog.Ctx(ctx)
+	if packageReplacement, ok := c.Replacements[packagePath]; !ok {
+		log.Debug("package has no replacements defined")
+		return packagePath, structName, nil
+	}
+
+	structs := packageReplacement[""]
 
 }
