@@ -64,6 +64,7 @@ type GeneratorConfig struct {
 	UnrollVariadic       bool
 	WithExpecter         bool
 	ReplaceType          []string
+	ResolveTypeAlias     bool
 }
 
 // Generator is responsible for generating the string containing
@@ -521,6 +522,9 @@ func (g *Generator) renderType(ctx context.Context, typ types.Type) string {
 	case *types.Named:
 		return g.renderNamedType(ctx, t)
 	case *types.Alias:
+		if g.config.ResolveTypeAlias {
+			return g.renderType(ctx, t.Underlying())
+		}
 		return g.renderNamedType(ctx, t)
 	case *types.TypeParam:
 		if t.Constraint() != nil {
